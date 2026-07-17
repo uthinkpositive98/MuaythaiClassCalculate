@@ -1,0 +1,559 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>เครื่องคำนวณกำไร · คลาสมวยไทย</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --night:    #0C0F14;
+    --ring:     #141A22;
+    --ring-hi:  #1B222C;
+    --rope:     #2A343F;
+    --bone:     #E6E1D6;
+    --dust:     #7C8797;
+    --red:      #D4384A;
+    --gold:     #E0B24C;
+    --gold-dim: #8A6D2A;
+
+    --sans: 'IBM Plex Sans Thai', system-ui, sans-serif;
+    --disp: 'Kanit', var(--sans);
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--night);
+    color: var(--bone);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 28px 20px 60px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; }
+
+  /* ---------- header ---------- */
+  .masthead {
+    border-bottom: 1px solid var(--rope);
+    padding-bottom: 18px;
+    margin-bottom: 26px;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-family: var(--disp);
+    font-weight: 600;
+    font-size: clamp(26px, 4.2vw, 40px);
+    line-height: 1.15;
+    letter-spacing: -.01em;
+  }
+  .sub { color: var(--dust); font-size: 14px; margin-top: 6px; }
+
+  /* ---------- layout ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 22px;
+    align-items: start;
+  }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--ring);
+    border: 1px solid var(--rope);
+    border-radius: 4px;
+    padding: 20px;
+  }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--dust);
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--rope);
+  }
+
+  /* ---------- controls ---------- */
+  .ctrl { margin-bottom: 22px; }
+  .ctrl:last-child { margin-bottom: 0; }
+
+  .ctrl-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .ctrl-label { font-size: 14px; font-weight: 500; }
+  .ctrl-val {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--gold);
+  }
+  .ctrl-val small { color: var(--dust); font-size: 11px; margin-left: 2px; }
+  .ctrl-note { font-size: 11.5px; color: var(--dust); margin-top: 6px; line-height: 1.45; }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 20px;
+    background: transparent;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 2px; background: var(--rope);
+  }
+  input[type=range]::-moz-range-track { height: 2px; background: var(--rope); }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    margin-top: -6px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: 0;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 14px; border: 0; border-radius: 50%; background: var(--gold);
+  }
+  input[type=range]:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+
+  /* ---------- day strip : the signature ---------- */
+  .strip-intro { font-size: 13px; color: var(--dust); margin-bottom: 14px; }
+  .strip-intro b { color: var(--bone); font-weight: 500; }
+
+  .strip { display: flex; gap: 8px; margin-bottom: 8px; }
+
+  .round {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--rope);
+    border-radius: 3px;
+    padding: 12px 10px;
+    background: var(--ring-hi);
+    position: relative;
+    animation: pop .28s ease-out both;
+  }
+  @keyframes pop { from { opacity: 0; transform: translateY(6px); } }
+  @media (prefers-reduced-motion: reduce) { .round { animation: none; } }
+
+  .round.first { border-color: var(--red); }
+
+  .round-no {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    color: var(--dust);
+    margin-bottom: 8px;
+  }
+  .round-net {
+    font-family: var(--mono);
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--gold);
+    line-height: 1.2;
+  }
+  .round-line {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--dust);
+    margin-top: 5px;
+  }
+  .round-line.gate { color: var(--red); }
+
+  .gate-tag {
+    position: absolute;
+    top: -1px; right: -1px;
+    background: var(--red);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .06em;
+    padding: 2px 5px;
+    border-radius: 0 2px 0 3px;
+  }
+
+  .strip-foot {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--dust);
+    border-top: 1px dashed var(--rope);
+    padding-top: 10px;
+    margin-top: 12px;
+  }
+  .strip-foot b { color: var(--gold); font-weight: 500; }
+
+  /* ---------- ledger ---------- */
+  .ledger { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 13.5px; }
+  .ledger td { padding: 9px 0; border-bottom: 1px solid var(--rope); }
+  .ledger td:first-child { color: var(--dust); font-family: var(--sans); font-size: 13.5px; }
+  .ledger td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .ledger tr.neg td:last-child { color: var(--red); }
+  .ledger tr.sum td { border-bottom: 0; border-top: 1px solid var(--gold-dim); padding-top: 13px; }
+  .ledger tr.sum td:first-child { color: var(--bone); font-weight: 500; }
+  .ledger tr.sum td:last-child { color: var(--gold); font-size: 17px; font-weight: 500; }
+
+  /* ---------- payout ---------- */
+  .payout {
+    background: linear-gradient(180deg, var(--ring-hi), var(--ring));
+    border: 1px solid var(--gold-dim);
+    border-radius: 4px;
+    padding: 22px;
+    text-align: center;
+    margin-top: 18px;
+  }
+  .payout-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+  }
+  .payout-num {
+    font-family: var(--disp);
+    font-weight: 600;
+    font-size: clamp(34px, 7vw, 52px);
+    color: var(--gold);
+    line-height: 1.1;
+    margin: 6px 0 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .payout-unit { font-size: 12.5px; color: var(--dust); }
+
+  /* ---------- stat row ---------- */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; }
+  @media (max-width: 560px) { .stats { grid-template-columns: 1fr; } }
+
+  .stat {
+    background: var(--ring);
+    border: 1px solid var(--rope);
+    border-radius: 4px;
+    padding: 14px;
+  }
+  .stat-k { font-size: 11.5px; color: var(--dust); margin-bottom: 5px; }
+  .stat-v {
+    font-family: var(--mono);
+    font-size: 21px;
+    font-weight: 500;
+    color: var(--bone);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-v.good { color: var(--gold); }
+  .stat-sub { font-size: 11px; color: var(--dust); margin-top: 4px; }
+
+  /* ---------- compare ---------- */
+  .compare { margin-top: 22px; }
+  .cmp-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--rope);
+  }
+  .cmp-row:last-child { border-bottom: 0; }
+  .cmp-k { font-size: 13.5px; }
+  .cmp-k span { display: block; font-size: 11.5px; color: var(--dust); margin-top: 2px; }
+  .cmp-v {
+    font-family: var(--mono);
+    font-size: 17px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .cmp-v.dim { color: var(--dust); }
+  .cmp-v.good { color: var(--gold); }
+
+  .verdict {
+    background: var(--ring-hi);
+    border-left: 2px solid var(--gold);
+    padding: 14px 16px;
+    margin-top: 16px;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .verdict b { color: var(--gold); font-weight: 500; }
+
+  .foot {
+    margin-top: 30px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rope);
+    font-size: 12px;
+    color: var(--dust);
+    line-height: 1.7;
+  }
+  .foot b { color: var(--bone); font-weight: 500; }
+</style>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="eyebrow">Bangkok · Muay Thai · P&amp;L</div>
+    <h1>เครื่องคำนวณกำไร คลาสมวยไทย</h1>
+    <div class="sub">ค่าเข้าทีม 600 บาท จ่ายวันละครั้ง ไม่ใช่คลาสละครั้ง — เลื่อน "คลาสต่อวัน" แล้วดูว่าเกิดอะไรขึ้น</div>
+  </div>
+
+  <div class="grid">
+
+    <!-- ============ CONTROLS ============ -->
+    <div class="panel">
+      <div class="panel-title">ตัวแปร</div>
+
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <span class="ctrl-label">ราคาต่อคลาส</span>
+          <span class="ctrl-val" id="v-price">690<small>฿</small></span>
+        </div>
+        <input type="range" id="price" min="390" max="1500" step="10" value="690" aria-label="ราคาต่อคลาส">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <span class="ctrl-label">คนต่อคลาส</span>
+          <span class="ctrl-val" id="v-students">6<small>คน</small></span>
+        </div>
+        <input type="range" id="students" min="1" max="12" step="1" value="6" aria-label="คนต่อคลาส">
+        <div class="ctrl-note">เพดานจริงคือ 10 — มีคนถือเป้าแค่ 2 คน</div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <span class="ctrl-label">คลาสต่อวัน</span>
+          <span class="ctrl-val" id="v-perday">3<small>คลาส</small></span>
+        </div>
+        <input type="range" id="perday" min="1" max="4" step="1" value="3" aria-label="คลาสต่อวัน">
+        <div class="ctrl-note">ตัวแปรที่สำคัญที่สุดในหน้านี้</div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <span class="ctrl-label">วันที่ไปยิม / สัปดาห์</span>
+          <span class="ctrl-val" id="v-days">3<small>วัน</small></span>
+        </div>
+        <input type="range" id="days" min="1" max="6" step="1" value="3" aria-label="วันต่อสัปดาห์">
+        <div class="ctrl-note">อาทิตย์ปิด — สูงสุด 6</div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <span class="ctrl-label">ค่าเข้ายิม / คน</span>
+          <span class="ctrl-val" id="v-fee">200<small>฿</small></span>
+        </div>
+        <input type="range" id="fee" min="0" max="400" step="20" value="200" aria-label="ค่าเข้ายิมต่อคน">
+        <div class="ctrl-note">ลากไป 0 เพื่อดูว่าจะเป็นยังไงถ้าขอยกเว้นค่าเข้าให้ทีมได้</div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <span class="ctrl-label">คนในทีม</span>
+          <span class="ctrl-val" id="v-team">3<small>คน</small></span>
+        </div>
+        <input type="range" id="team" min="2" max="5" step="1" value="3" aria-label="จำนวนคนในทีม">
+      </div>
+    </div>
+
+    <!-- ============ OUTPUT ============ -->
+    <div>
+
+      <!-- signature : the day strip -->
+      <div class="panel">
+        <div class="panel-title">หนึ่งวันที่ยิม</div>
+        <div class="strip-intro">
+          ค่าเข้าของทีม <b id="s-gate">600฿</b> โดนเก็บที่<b>ประตู ครั้งเดียว</b> —
+          คลาสที่ 2, 3, 4 ของวันนั้นไม่ต้องจ่ายอีก
+        </div>
+        <div class="strip" id="strip"></div>
+        <div class="strip-foot">
+          <span>ค่าเข้าทีม เฉลี่ยต่อคลาส <b id="s-amort">200฿</b></span>
+          <span>กำไรทั้งวัน <b id="s-daytotal">0฿</b></span>
+        </div>
+      </div>
+
+      <!-- ledger -->
+      <div class="panel" style="margin-top:18px">
+        <div class="panel-title">บัญชี · ต่อวัน</div>
+        <table class="ledger">
+          <tr><td id="l-rev-k">รายรับ</td><td id="l-rev">0</td></tr>
+          <tr class="neg"><td id="l-scost-k">ค่าเข้าของลูกค้า</td><td id="l-scost">0</td></tr>
+          <tr class="neg"><td id="l-tcost-k">ค่าเข้าของทีม</td><td id="l-tcost">0</td></tr>
+          <tr class="sum"><td>กำไรสุทธิต่อวัน</td><td id="l-net">0</td></tr>
+        </table>
+      </div>
+
+      <!-- payout -->
+      <div class="payout">
+        <div class="payout-label">แบ่งเท่ากัน · ต่อคน · ต่อเดือน</div>
+        <div class="payout-num" id="p-month">0</div>
+        <div class="payout-unit">บาท / คน / เดือน <span id="p-basis"></span></div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-k">ต่อคน ต่อวันที่ไปสอน</div>
+          <div class="stat-v good" id="st-day">0</div>
+          <div class="stat-sub" id="st-day-sub">บาท</div>
+        </div>
+        <div class="stat">
+          <div class="stat-k">จุดคุ้มทุน</div>
+          <div class="stat-v" id="st-be">0</div>
+          <div class="stat-sub">คน ต่อวัน (รวมทุกคลาส)</div>
+        </div>
+        <div class="stat">
+          <div class="stat-k">คลาสต่อสัปดาห์</div>
+          <div class="stat-v" id="st-cw">0</div>
+          <div class="stat-sub" id="st-cw-sub">คลาส</div>
+        </div>
+      </div>
+
+      <!-- compare -->
+      <div class="panel compare">
+        <div class="panel-title">อัดวันเดียว vs กระจายทุกวัน</div>
+        <div class="cmp-row">
+          <div class="cmp-k">
+            กระจาย — วันละ 1 คลาส
+            <span id="c-a-sub"></span>
+          </div>
+          <div class="cmp-v dim" id="c-a">0</div>
+        </div>
+        <div class="cmp-row">
+          <div class="cmp-k">
+            อัด — <span id="c-b-n">3</span> คลาสในวันเดียว
+            <span id="c-b-sub"></span>
+          </div>
+          <div class="cmp-v good" id="c-b">0</div>
+        </div>
+        <div class="verdict" id="verdict"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>สมมติฐาน:</b> 1 เดือน = 4.33 สัปดาห์ · ราคารวมค่าเข้าของลูกค้าแล้ว · แบ่งเท่ากันทุกคน ไม่ว่าใครมาหรือไม่มา · ยังไม่ได้หักกองกลาง<br>
+    <b>ยังไม่ได้คิด:</b> Private, เหมากลุ่มบริษัท, บัตร 10 ครั้ง (ซึ่งจะดันตัวเลขขึ้นอีก เพราะคนใช้ไม่ครบ) · no-show · ค่านวมเช่าของยิม<br>
+    <b>ต้องเช็ค:</b> บัตร 200 ใช้ได้ทั้งวันจริงไหม — ถ้าไม่ใช่ ตัวเลขทั้งหน้านี้เปลี่ยนหมด
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const inputs = ['price','students','perday','days','fee','team'].map($);
+  const B = n => Math.round(n).toLocaleString('en-US');
+  const WEEKS = 4.33;
+
+  function render() {
+    const price    = +$('price').value;
+    const students = +$('students').value;
+    const perday   = +$('perday').value;
+    const days     = +$('days').value;
+    const fee      = +$('fee').value;
+    const team     = +$('team').value;
+
+    // control readouts
+    $('v-price').innerHTML    = price + '<small>฿</small>';
+    $('v-students').innerHTML = students + '<small>คน</small>';
+    $('v-perday').innerHTML   = perday + '<small>คลาส</small>';
+    $('v-days').innerHTML     = days + '<small>วัน</small>';
+    $('v-fee').innerHTML      = fee + '<small>฿</small>';
+    $('v-team').innerHTML     = team + '<small>คน</small>';
+
+    // core math
+    const marginPerHead = price - fee;          // กำไรต่อลูกค้า 1 คน
+    const gate          = fee * team;           // ค่าเข้าทีม — ต่อวัน ครั้งเดียว
+    const revDay        = price * students * perday;
+    const sCostDay      = fee * students * perday;
+    const netDay        = revDay - sCostDay - gate;
+    const perPersonDay  = netDay / team;
+    const netMonth      = netDay * days * WEEKS;
+    const perMonth      = netMonth / team;
+    const breakeven     = marginPerHead > 0 ? gate / marginPerHead : Infinity;
+    const amort         = gate / perday;
+
+    // ---- day strip (signature) ----
+    let html = '';
+    for (let i = 1; i <= perday; i++) {
+      const gross = price * students;
+      const sc    = fee * students;
+      const g     = i === 1 ? gate : 0;
+      const net   = gross - sc - g;
+      html += `
+        <div class="round ${i === 1 ? 'first' : ''}" style="animation-delay:${(i-1)*45}ms">
+          ${i === 1 ? '<div class="gate-tag">ประตู</div>' : ''}
+          <div class="round-no">คลาส ${i}</div>
+          <div class="round-net">${B(net)}฿</div>
+          <div class="round-line">${students} คน · +${B(gross - sc)}</div>
+          <div class="round-line ${i === 1 ? 'gate' : ''}">
+            ${i === 1 ? '−' + B(gate) + ' ค่าเข้าทีม' : 'ไม่มีค่าเข้าเพิ่ม'}
+          </div>
+        </div>`;
+    }
+    $('strip').innerHTML = html;
+
+    $('s-gate').textContent     = B(gate) + '฿';
+    $('s-amort').textContent    = B(amort) + '฿';
+    $('s-daytotal').textContent = B(netDay) + '฿';
+
+    // ---- ledger ----
+    $('l-rev-k').textContent   = `รายรับ · ${students} คน × ${perday} คลาส × ${price}฿`;
+    $('l-rev').textContent     = B(revDay);
+    $('l-scost-k').textContent = `ค่าเข้าของลูกค้า · ${students * perday} × ${fee}฿`;
+    $('l-scost').textContent   = '−' + B(sCostDay);
+    $('l-tcost-k').textContent = `ค่าเข้าของทีม · ${team} × ${fee}฿ (วันละครั้ง)`;
+    $('l-tcost').textContent   = '−' + B(gate);
+    $('l-net').textContent     = B(netDay) + ' ฿';
+
+    // ---- payout ----
+    $('p-month').textContent = B(perMonth);
+    $('p-basis').textContent = `· ${days} วัน/สัปดาห์ · ${perday} คลาส/วัน`;
+    $('st-day').textContent  = B(perPersonDay);
+    $('st-day-sub').textContent = `บาท · ${perday} คลาส`;
+    $('st-be').textContent   = breakeven === Infinity ? '—' : breakeven.toFixed(1);
+    $('st-cw').textContent   = perday * days;
+    $('st-cw-sub').textContent = `= ${Math.round(perday * days * WEEKS)} คลาส/เดือน`;
+
+    // ---- compare : same total classes, spread vs stacked ----
+    const totalCw    = perday * days;
+    const spreadDays = Math.min(totalCw, 6);
+    const spreadPer  = totalCw / spreadDays;
+    const spreadNet  = (price * students * spreadPer - fee * students * spreadPer - gate) * spreadDays * WEEKS / team;
+    const stackedNet = perMonth;
+    const diff       = stackedNet - spreadNet;
+
+    $('c-a-sub').textContent = `ไปยิม ${spreadDays} วัน/สัปดาห์ · จ่ายค่าเข้า ${B(gate * spreadDays)}฿/สัปดาห์`;
+    $('c-b-n').textContent   = perday;
+    $('c-b-sub').textContent = `ไปยิม ${days} วัน/สัปดาห์ · จ่ายค่าเข้า ${B(gate * days)}฿/สัปดาห์`;
+    $('c-a').textContent     = B(spreadNet) + '฿';
+    $('c-b').textContent     = B(stackedNet) + '฿';
+
+    let v;
+    if (perday === 1) {
+      v = `ตอนนี้สอนวันละคลาสเดียว — ค่าเข้าทีม <b>${B(gate)}฿ ถูกจ่ายเต็มให้คลาสเดียว</b>
+           ลองเลื่อน "คลาสต่อวัน" ขึ้นไปดู จำนวนคลาสต่อสัปดาห์เท่าเดิม แต่เงินไม่เท่าเดิม`;
+    } else if (fee === 0) {
+      v = `ค่าเข้าเป็น 0 แล้ว — พอไม่มีต้นทุนที่ประตู <b>การอัดคลาสวันเดียวก็ไม่ได้เปรียบอีกต่อไป</b>
+           นี่คือเหตุผลว่าทำไมการขอยกเว้นค่าเข้าให้ทีม ถึงมีค่ามากกว่าที่คิด`;
+    } else {
+      v = `สอน <b>${totalCw} คลาสเท่ากัน</b> แต่อัดวันเดียวได้เพิ่ม <b>${B(diff)}฿/คน/เดือน</b>
+           หรือปีละ <b>${B(diff * 12)}฿</b> — โดยไม่ได้สอนเพิ่มเลยแม้แต่คลาสเดียว`;
+    }
+    $('verdict').innerHTML = v;
+  }
+
+  inputs.forEach(el => el.addEventListener('input', render));
+  render();
+</script>
